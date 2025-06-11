@@ -1,0 +1,27 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo "Upgrading pip..."
+      - python -m pip install --upgrade pip
+      - echo "Installing dependencies manually..."
+      - pip install aws-cdk-lib constructs boto3 || exit 1
+      - echo "Installing project dependencies..."
+      - if [ -f requirements.txt ]; then pip install -r requirements.txt || exit 1; fi
+
+  build:
+    commands:
+      - echo "Checking AWS credentials..."
+      - aws sts get-caller-identity  # Debugging credentials
+      - echo "Synthesizing CDK application..."
+      - cdk synth || exit 1
+
+  post_build:
+    commands:
+      - echo "Bootstrapping AWS environment..."
+      - cdk bootstrap || exit 1
+      - echo "Deploying VPC Stack..."
+      - cdk deploy MyVpcStack --require-approval never || exit 1
